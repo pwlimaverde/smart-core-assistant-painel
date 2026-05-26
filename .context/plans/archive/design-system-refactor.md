@@ -1,5 +1,5 @@
 ---
-status: active
+status: archived
 generated: 2026-05-26
 title: "Design System Desacoplado — Migração DTL → Jinja2"
 summary: "Centralizar toda a camada visual em modules/design_system/ com Jinja2, migrando 72 templates dos apps Django para o design system centralizado, mantendo DTL apenas para o Admin (Jazzmin)."
@@ -17,32 +17,32 @@ phases:
     name: "Componentes CSS Utilitários"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "pending"
+    status: "completed"
   - id: "phase-2-workspace"
     name: "Migração Workspace (Atendimento + Chat + Kanban)"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "pending"
+    status: "completed"
   - id: "phase-3-tenants"
     name: "Migração Configurações e Tenants"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "pending"
+    status: "completed"
   - id: "phase-4-settings-users"
     name: "Migração Settings, Treinamento e Usuários"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "pending"
+    status: "completed"
   - id: "phase-5-core-errors"
     name: "Migração Core e Páginas de Erro"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "pending"
+    status: "completed"
   - id: "phase-6-cleanup"
     name: "Limpeza Total e Finalização"
     prevc: "V"
     agent: "code-reviewer"
-    status: "pending"
+    status: "completed"
 ---
 
 # Design System Desacoplado — Migração DTL → Jinja2

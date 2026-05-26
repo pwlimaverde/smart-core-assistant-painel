@@ -32,9 +32,9 @@
         </div>
     </div>
 
-    {% has_no_module_permissions as has_no_modules %}
-    {% can_view_module "configuracoes" as can_config %}
-    {% is_owner_user as is_owner %}
+    {% set has_no_modules = has_no_module_permissions() %}
+    {% set can_config = can_view_module("configuracoes") %}
+    {% set is_owner = is_owner_user() %}
 
     {% if has_no_modules %}
     <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">

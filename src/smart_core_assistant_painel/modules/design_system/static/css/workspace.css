@@ -18,7 +18,6 @@
    ==========================================================================*/
 
 /* Importa as variáveis do design system. Mantém este import no topo. */
-@import url('./workspace-tokens.css');
 
 /* ==========================================================================
    1. LAYOUT SHELL

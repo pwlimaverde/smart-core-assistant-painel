@@ -6,6 +6,9 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./components.css";
+@import "./workspace.css";
+@import "./chat.css";
+@import "./kanban.css";
 
 /* Fontes de detecção de classes (Tailwind v4 — build de produção via CLI).
    Escaneia os templates/JS do app e dos módulos para purgar utilities. */

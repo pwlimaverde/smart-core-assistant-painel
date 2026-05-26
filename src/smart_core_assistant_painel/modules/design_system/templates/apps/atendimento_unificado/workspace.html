@@ -1,26 +1,5 @@
 {% extends "apps/atendimento_unificado/base_workspace.html" %}
 
-{% block extra_head %}
-    {{ super() }}
-    <style>
-        /* Drag-and-drop (SortableJS) — preserva nomes/seletores existentes. */
-        .kanban-ghost {
-            opacity: 0.35;
-            background: var(--ws-chip) !important;
-            border: 2px dashed var(--ws-accent) !important;
-        }
-        .kanban-ghost > * { visibility: hidden; }
-        .kanban-chosen { cursor: grabbing !important; }
-        .kanban-drag {
-            transform: rotate(2deg);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.18) !important;
-            border-color: var(--ws-accent) !important;
-        }
-        .kanban-card { will-change: transform; }
-        .kanban-col-body { min-height: 50px; }
-    </style>
-{% endblock %}
-
 {% block workspace_x_data %}x-data="workspaceStore({
     fluxoId: {{ fluxo_id|default('null') }},
     tenantSlug: '{{ tenant_slug|escapejs }}',
@@ -425,8 +404,8 @@
 {% block extra_scripts %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script src="{{ static_versioned('js/core_alpine.js') }}"></script>
-    <script src="{{ static_versioned('chat_evolution/js/chat_alpine.js') }}"></script>
-    <script src="{{ static_versioned('gestao_kanban/js/kanban_alpine.js') }}"></script>
-    <script src="{{ static_versioned('atendimento_unificado/js/workspace_alpine.js') }}"></script>
-    <script src="{{ static_versioned('atendimento_unificado/js/workspace_coordinator.js') }}"></script>
+    <script src="{{ static_versioned('js/chat_alpine.js') }}"></script>
+    <script src="{{ static_versioned('js/kanban_alpine.js') }}"></script>
+    <script src="{{ static_versioned('js/workspace_alpine.js') }}"></script>
+    <script src="{{ static_versioned('js/workspace_coordinator.js') }}"></script>
 {% endblock %}

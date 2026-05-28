@@ -4,6 +4,14 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.3+003 - 2026-05-28 (build manual, sem tag)
+
+### Fixed
+- **`context_processors.project_version`**: removido hack que concatenava
+  `+001` no final da string mesmo quando a versão real era outra (resultado:
+  `1.2.3+2` aparecia como `1.2.3+2+001` no rodapé). Agora retorna
+  `__version__` direto.
+
 ## 1.2.3+002 - 2026-05-28 (build manual, sem tag)
 
 ### Performance

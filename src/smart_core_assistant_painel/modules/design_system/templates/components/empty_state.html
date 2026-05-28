@@ -18,7 +18,9 @@
   {% endif %}
   {% if button_label %}
     <div class="mt-6">
-      {% include "components/button.html" with variant="primary" label=button_label attrs=button_attrs %}
+      {% with variant="primary", label=button_label, attrs=button_attrs %}
+        {% include "components/button.html" %}
+      {% endwith %}
     </div>
   {% endif %}
 </div>

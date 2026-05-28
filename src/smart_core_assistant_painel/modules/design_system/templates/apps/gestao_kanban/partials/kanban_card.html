@@ -1,0 +1,88 @@
+{# Partial usado dentro de <template x-for="card in (board.cards[etapa.id] || [])">. Recebe card.
+   Mantém SortableJS funcionando: classes .kanban-card e atributo data-atend-id preservados.
+   Adiciona ws-card para o styling do design system novo. #}
+<div @click="onCardClick(card.atendimento_id, $event)"
+    :data-atend-id="card.atendimento_id"
+    :class="(activeConv && activeConv.atendimento_id === card.atendimento_id) ? 'ws-card ws-card--active kanban-card' : 'ws-card kanban-card'"
+    role="button"
+    tabindex="0"
+    @keydown.enter.prevent="onCardClick(card.atendimento_id)">
+
+    {# Linha 1: avatar + nome do contato + tempo #}
+    <div class="ws-card__row1">
+        <div class="ws-card__av"
+            :class="card.contato_avatar_url ? 'ws-card__av ws-card__av--img' : 'ws-card__av'">
+            <template x-if="card.contato_avatar_url">
+                <img :src="card.contato_avatar_url"
+                    :alt="card.contato_nome || ''"
+                    loading="lazy"
+                    @error="card.contato_avatar_url = ''">
+            </template>
+            <template x-if="!card.contato_avatar_url">
+                <span x-text="(card.contato_nome || '?').slice(0, 2).toUpperCase()"></span>
+            </template>
+        </div>
+        <div class="ws-card__id">
+            <div class="ws-card__name" x-text="card.contato_nome"></div>
+            <div class="ws-card__phone" x-show="card.canal_emoji || card.status">
+                <span x-text="card.canal_emoji || ''"></span>
+                <span x-text="card.status_emoji + ' ' + card.status"></span>
+            </div>
+        </div>
+        <div class="ws-card__when" x-text="card.tempo_ultima_msg || ''"></div>
+        {# Badge de não-lidas mostrado apenas no modo trilha (focusMode = chat) #}
+        <span class="ws-card__rail-unread"
+            x-show="card.nao_lidos && card.nao_lidos > 0"
+            x-text="card.nao_lidos"></span>
+    </div>
+
+    {# Linha 2: assunto do atendimento #}
+    <p class="ws-card__subject"
+        :class="card.assunto ? '' : 'ws-card__subject--empty'"
+        x-text="card.assunto || 'Sem assunto'"></p>
+
+    {# Preview de mensagem #}
+    <template x-if="card.preview_msg">
+        <p class="ws-card__msg"
+            x-text="(card.preview_remetente === 'contato' ? '' : '↳ ') + card.preview_msg"></p>
+    </template>
+
+    {# Linha de metadados: prioridade, tags, SLA, atendente, não lidas #}
+    <div class="ws-card__meta">
+        <span class="ws-tag"
+            :class="{
+                'ws-tag--info':  (card.prioridade || '').toLowerCase() === 'normal',
+                'ws-tag--ok':    (card.prioridade || '').toLowerCase() === 'baixa',
+                'ws-tag--warn':  (card.prioridade || '').toLowerCase() === 'alta',
+                'ws-tag--gold':  (card.prioridade || '').toLowerCase() === 'urgente',
+            }"
+            x-text="card.prioridade"></span>
+
+        <template x-if="card.sla_estourado">
+            <span class="ws-card__sla ws-card__sla--danger" title="SLA estourado (>8h na etapa)">
+                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
+                </svg>
+                SLA
+            </span>
+        </template>
+
+        <template x-if="card.atendente">
+            <span title="Atendente"
+                style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--ws-fg-muted);">
+                <span style="width:16px; height:16px; border-radius:50%; background:var(--ws-accent); color:#fff; font-size:8px; font-weight:700; display:flex; align-items:center; justify-content:center;"
+                    x-text="card.atendente.nome.slice(0,2).toUpperCase()"></span>
+                <span x-text="card.atendente.nome"></span>
+            </span>
+        </template>
+
+        <template x-if="!card.atendente">
+            <span style="font-size:10px; color:var(--ws-fg-subtle); font-style:italic;">Sem atendente</span>
+        </template>
+
+        <template x-if="card.nao_lidos && card.nao_lidos > 0">
+            <span class="ws-card__unread" x-text="card.nao_lidos"></span>
+        </template>
+    </div>
+</div>

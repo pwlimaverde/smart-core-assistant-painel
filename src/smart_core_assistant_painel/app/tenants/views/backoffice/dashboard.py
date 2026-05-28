@@ -8,7 +8,7 @@ from smart_core_assistant_painel.app.tenants.models import Subscription, Tenant
 
 
 class BackofficeDashboardView(UserPassesTestMixin, TemplateView):
-    template_name = "tenants/backoffice/dashboard.html"
+    template_name = "apps/tenants/backoffice/dashboard.html"
 
     def test_func(self):
         return self.request.user.is_superuser

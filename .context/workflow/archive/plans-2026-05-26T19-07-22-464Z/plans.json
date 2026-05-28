@@ -1,0 +1,14 @@
+{
+  "active": [],
+  "completed": [
+    {
+      "slug": "design-system-refactor",
+      "path": "plans/archive/design-system-refactor.md",
+      "title": "Design System Desacoplado — Migração DTL → Jinja2",
+      "summary": "Centralizar toda a camada visual em `modules/design_system/` com Jinja2,",
+      "linkedAt": "2026-05-26T14:39:56.437Z",
+      "status": "completed"
+    }
+  ],
+  "primary": null
+}

@@ -32,7 +32,7 @@ from .feature_flags import is_workspace_enabled_for_tenant
 class WorkspaceView(View):
     """Shell HTML do Workspace de Atendimento Unificado."""
 
-    template_name = "atendimento_unificado/workspace.html"
+    template_name = "apps/atendimento_unificado/workspace.html"
 
     def get(self, request: HttpRequest) -> HttpResponse:
         if not is_workspace_enabled_for_tenant():
@@ -81,7 +81,7 @@ class WorkspaceView(View):
 def _disabled_response(request: HttpRequest) -> HttpResponse:
     return render(
         request,
-        "atendimento_unificado/workspace_disabled.html",
+        "apps/atendimento_unificado/workspace_disabled.html",
         status=200,
     )
 

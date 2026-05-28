@@ -1,9 +1,9 @@
-<div class="relative flex-shrink-0 inline-flex items-center justify-center rounded-full bg-[var(--ws-chip)] text-[var(--ws-fg-muted)] {{ class }}" style="width: {{ size|default:'40px' }}; height: {{ size|default:'40px' }};">
+<div class="relative flex-shrink-0 inline-flex items-center justify-center rounded-full bg-[var(--ws-chip)] text-[var(--ws-fg-muted)] {{ class }}" style="width: {{ size|default('40px') }}; height: {{ size|default('40px') }};">
   {% if src %}
-    <img src="{{ src }}" alt="{{ alt|default:'' }}" class="object-cover w-full h-full rounded-full">
+    <img src="{{ src }}" alt="{{ alt|default('') }}" class="object-cover w-full h-full rounded-full">
   {% else %}
     <span class="text-sm font-semibold tracking-wider uppercase">
-      {{ initials|slice:":2" }}
+      {{ initials[:2] if initials else '' }}
     </span>
   {% endif %}
   {% if status %}

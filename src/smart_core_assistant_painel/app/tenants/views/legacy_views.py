@@ -93,7 +93,7 @@ def _can_edit_tenant_configs(request, tenant, tenant_profile=None) -> bool:
 
 
 class TenantSignupView(FormView):
-    template_name = "tenants/signup.html"
+    template_name = "apps/tenants/signup.html"
     form_class = TenantSignupForm
     success_url = reverse_lazy("tenants:dashboard")
 
@@ -141,7 +141,7 @@ class TenantSignupView(FormView):
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = "tenants/dashboard.html"
+    template_name = "apps/tenants/dashboard.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -163,7 +163,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
 
 class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
-    template_name = "tenants/config_form.html"
+    template_name = "apps/tenants/config_form.html"
     success_url = reverse_lazy("tenants:dashboard")
 
     def get_object(self, queryset=None):
@@ -236,7 +236,7 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
 class EvolutionConfigView(BaseTenantConfigView):
     model = TenantEvolution
     form_class = TenantEvolutionForm
-    template_name = "tenants/config_evolution.html"
+    template_name = "apps/tenants/config_evolution.html"
 
     def get_config_object(self, tenant):
         # Ensure object exists
@@ -247,7 +247,7 @@ class EvolutionConfigView(BaseTenantConfigView):
 class TrelloConfigView(BaseTenantConfigView):
     model = TenantTrello
     form_class = TenantTrelloForm
-    template_name = "tenants/config_trello.html"
+    template_name = "apps/tenants/config_trello.html"
 
     def get_config_object(self, tenant: Tenant) -> TenantTrello:
         obj, _ = TenantTrello.objects.get_or_create(tenant=tenant)
@@ -278,7 +278,7 @@ class AIConfigView(BaseTenantConfigView):
 
     model = TenantConfig
     form_class = TenantConfigForm
-    template_name = "tenants/config_ai.html"
+    template_name = "apps/tenants/config_ai.html"
 
     def get_config_object(self, tenant: Tenant) -> TenantConfig:
         obj, _ = TenantConfig.objects.get_or_create(tenant=tenant)
@@ -290,7 +290,7 @@ class DatabaseConfigView(BaseTenantConfigView):
 
     model = TenantDatabase
     form_class = TenantDatabaseForm
-    template_name = "tenants/config_database.html"
+    template_name = "apps/tenants/config_database.html"
 
     def get_config_object(self, tenant: Tenant) -> TenantDatabase:
         obj, _ = TenantDatabase.objects.get_or_create(
@@ -415,7 +415,7 @@ class ConfigDebugView(LoginRequiredMixin, TemplateView):
     corretamente.
     """
 
-    template_name = "tenants/config_debug.html"
+    template_name = "apps/tenants/config_debug.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)

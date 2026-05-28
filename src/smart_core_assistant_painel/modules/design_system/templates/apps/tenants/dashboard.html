@@ -1,0 +1,202 @@
+{% extends "base_dashboard.html" %}
+
+
+{% block title %}Dashboard - {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-stone-800">{{ tenant.name }}</h2>
+                <p class="text-stone-500 font-mono text-sm mt-1">{{ tenant.slug }}</p>
+            </div>
+            <div class="flex gap-2">
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                    {{ subscription.plan.name|default("Sem Plano") }}
+                </span>
+                {% if tenant.active %}
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold">
+                    Ativo
+                </span>
+                {% else %}
+                <span
+                    class="inline-flex items-center px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-semibold">
+                    Inativo
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% set has_no_modules = has_no_module_permissions() %}
+    {% set can_config = can_view_module("configuracoes") %}
+    {% set is_owner = is_owner_user() %}
+
+    {% if has_no_modules %}
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+        <h3 class="text-lg font-semibold text-stone-800">Acesso limitado</h3>
+        <p class="text-stone-500 mt-2">
+            Você não possui módulos habilitados. Solicite acesso ao responsável do tenant.
+        </p>
+    </div>
+    {% elif is_owner or can_config %}
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Database PostgreSQL -->
+        <div
+            class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 flex flex-col transition-all hover:shadow-md border-l-4 border-l-[#a98f71] h-full">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-[#a98f71]/10 rounded-lg mr-3 text-[#a98f71]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-stone-800">Banco de Dados</h3>
+            </div>
+            <p class="text-stone-500 text-sm mb-4 flex-grow">Conecte seu PostgreSQL para armazenar dados.</p>
+            <div class="mb-4 text-sm">
+                <span class="text-stone-400 mr-2">Status:</span>
+                {% if database.connection_valid %}
+                <span class="text-green-600 font-medium flex items-center inline-flex">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Conectado
+                </span>
+                {% else %}
+                <span class="text-red-500 font-medium flex items-center inline-flex">
+                    <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span> Não configurado
+                </span>
+                {% endif %}
+            </div>
+            <a href="{{ url('tenants:config_database') }}"
+                class="w-full text-center px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white rounded-lg font-medium transition-colors shadow-sm">
+                Configurar
+            </a>
+        </div>
+
+        <!-- Evolution API -->
+        <div
+            class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 flex flex-col transition-all hover:shadow-md border-l-4 border-l-[#a98f71] h-full">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-[#a98f71]/10 rounded-lg mr-3 text-[#a98f71]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-stone-800">Evolution API</h3>
+            </div>
+            <p class="text-stone-500 text-sm mb-4 flex-grow">Conecte seu WhatsApp via Evolution API.</p>
+            <div class="mb-4 text-sm">
+                <span class="text-stone-400 mr-2">Status:</span>
+                {% if evolution.connection_valid %}
+                <span class="text-green-600 font-medium flex items-center inline-flex">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Conectado
+                </span>
+                {% else %}
+                <span class="text-stone-400 font-medium flex items-center inline-flex">
+                    <span class="w-2 h-2 bg-stone-300 rounded-full mr-1"></span> Desconectado
+                </span>
+                {% endif %}
+            </div>
+            <a href="{{ url('tenants:config_evolution') }}"
+                class="w-full text-center px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white rounded-lg font-medium transition-colors shadow-sm">
+                Configurar
+            </a>
+        </div>
+
+        <!-- Trello -->
+        <div
+            class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 flex flex-col transition-all hover:shadow-md border-l-4 border-l-[#a98f71] h-full">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-[#a98f71]/10 rounded-lg mr-3 text-[#a98f71]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-stone-800">Trello</h3>
+            </div>
+            <p class="text-stone-500 text-sm mb-4 flex-grow">Integre seus quadros do Trello.</p>
+            <div class="mb-4 text-sm">
+                <span class="text-stone-400 mr-2">Status:</span>
+                {% if trello.api_key %}
+                <span class="text-green-600 font-medium flex items-center inline-flex">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Configurado
+                </span>
+                {% else %}
+                <span class="text-stone-400 font-medium flex items-center inline-flex">
+                    <span class="w-2 h-2 bg-stone-300 rounded-full mr-1"></span> Não configurado
+                </span>
+                {% endif %}
+            </div>
+            <a href="{{ url('tenants:config_trello') }}"
+                class="w-full text-center px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white rounded-lg font-medium transition-colors shadow-sm">
+                Configurar
+            </a>
+        </div>
+
+        <!-- Inteligência Artificial -->
+        <div
+            class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 flex flex-col transition-all hover:shadow-md border-l-4 border-l-[#a98f71] h-full">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-[#a98f71]/10 rounded-lg mr-3 text-[#a98f71]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-stone-800">Inteligência Artificial</h3>
+            </div>
+            <p class="text-stone-500 text-sm mb-4 flex-grow">Personalize prompts e configurações de LLM.</p>
+            <div class="mb-4 text-sm">
+                <span class="text-stone-400 font-medium">Gerenciamento de IA</span>
+            </div>
+            <a href="{{ url('tenants:config_ai') }}"
+                class="w-full text-center px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white rounded-lg font-medium transition-colors shadow-sm">
+                Configurar
+            </a>
+        </div>
+
+        <!-- Debug de Configurações -->
+        <div
+            class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 flex flex-col transition-all hover:shadow-md border-l-4 border-l-[#a98f71] h-full">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-[#a98f71]/10 rounded-lg mr-3 text-[#a98f71]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-stone-800">Debug de Configurações</h3>
+            </div>
+            <p class="text-stone-500 text-sm mb-4 flex-grow">Visualize todas as configs carregadas.</p>
+            <div class="mb-4 text-sm">
+                <span class="text-stone-400">Ferramenta Dev</span>
+            </div>
+            <a href="{{ url('tenants:config_debug') }}"
+                class="w-full text-center px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white rounded-lg font-medium transition-colors shadow-sm">
+                Ver Configurações
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+        <h3 class="text-lg font-semibold text-stone-800">Sem acesso às configurações</h3>
+        <p class="text-stone-500 mt-2">
+            Seu usuário não possui permissão para visualizar o dashboard de configurações.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

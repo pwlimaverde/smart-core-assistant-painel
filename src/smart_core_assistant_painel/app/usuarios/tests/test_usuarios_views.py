@@ -24,7 +24,7 @@ class TestUsuariosAppViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "cadastro.html")
+        self.assertTemplateUsed(response, "apps/usuarios/cadastro.html")
 
     def test_cadastro_post_success(self) -> None:
         """Test successful user registration."""
@@ -128,7 +128,7 @@ class TestUsuariosAppViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "login.html")
+        self.assertTemplateUsed(response, "apps/usuarios/login.html")
 
     def test_login_post_success(self) -> None:
         """Test successful user login."""

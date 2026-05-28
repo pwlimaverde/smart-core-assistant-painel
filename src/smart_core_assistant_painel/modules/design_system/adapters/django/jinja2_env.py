@@ -1,6 +1,8 @@
 import os
+from functools import lru_cache
 from typing import Any, Optional
 
+from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.middleware.csrf import get_token
 from django.templatetags.static import static
@@ -8,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import escapejs
 from django.utils.safestring import mark_safe
-from jinja2 import Environment, pass_context
+from jinja2 import Environment, FileSystemBytecodeCache, pass_context
 
 from smart_core_assistant_painel.app.tenants.models import Tenant, TenantUser
 
@@ -36,8 +38,8 @@ def _resolve_mtime(path: str) -> Optional[float]:
         return None
 
 
-def static_versioned(path: str) -> str:
-    """Versão Jinja2 para cache-busting baseado no mtime do arquivo estático."""
+@lru_cache(maxsize=512)
+def _static_versioned_cached(path: str) -> str:
     url = static(path)
     mtime = _resolve_mtime(path)
     if mtime is None:
@@ -45,9 +47,32 @@ def static_versioned(path: str) -> str:
     return f"{url}?v={int(mtime)}"
 
 
+def static_versioned(path: str) -> str:
+    """Versão Jinja2 para cache-busting baseado no mtime do arquivo estático.
+
+    Em produção (DEBUG=False) o resultado é memoizado por processo: arquivos
+    estáticos não mudam até o próximo deploy. Em DEBUG, resolve a cada chamada
+    para refletir alterações em desenvolvimento.
+    """
+    if settings.DEBUG:
+        url = static(path)
+        mtime = _resolve_mtime(path)
+        if mtime is None:
+            return url
+        return f"{url}?v={int(mtime)}"
+    return _static_versioned_cached(path)
+
+
 def _resolve_tenant_context(
     request: Any,
 ) -> tuple[Optional[Tenant], Optional[TenantUser]]:
+    # Cache por request: helpers de permissão são chamados várias vezes
+    # no mesmo render (sidebar do dashboard chama ~8 helpers), e cada um
+    # entrava aqui disparando uma query TenantUser.objects.get() idêntica.
+    cached = getattr(request, "_tenant_ctx_cache", None)
+    if cached is not None:
+        return cached
+
     tenant = getattr(request, "tenant", None)
     tenant_user = None
     if tenant:
@@ -57,19 +82,34 @@ def _resolve_tenant_context(
             )
         except TenantUser.DoesNotExist:
             tenant_user = None
-        return tenant, tenant_user
+        result = (tenant, tenant_user)
+        try:
+            request._tenant_ctx_cache = result
+        except AttributeError:
+            pass
+        return result
 
     # Tenta via TenantUser
     try:
         tenant_user = request.user.tenant_profile
         tenant = tenant_user.tenant
-        return tenant, tenant_user
+        result = (tenant, tenant_user)
+        try:
+            request._tenant_ctx_cache = result
+        except AttributeError:
+            pass
+        return result
     except Exception:
         pass
 
     # Tenta via owner
     tenant = Tenant.objects.filter(owner=request.user).first()
-    return tenant, None
+    result = (tenant, None)
+    try:
+        request._tenant_ctx_cache = result
+    except AttributeError:
+        pass
+    return result
 
 
 @pass_context
@@ -279,8 +319,23 @@ def cut_filter(value: Any, arg: str) -> str:
     return str(value).replace(arg, "")
 
 
+def _build_bytecode_cache() -> Optional[FileSystemBytecodeCache]:
+    """Cria diretório e cache de bytecode Jinja2 em disco.
+
+    Evita re-parsear .html → AST → bytecode em cada cold-start de worker.
+    Falha silenciosamente se o diretório não puder ser criado (FS read-only).
+    """
+    cache_dir = os.environ.get("JINJA2_BYTECODE_CACHE_DIR", "/tmp/jinja2-cache")
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        return FileSystemBytecodeCache(cache_dir)
+    except OSError:
+        return None
+
+
 def environment(**options: Any) -> Environment:
     """Inicializa e configura o ambiente Jinja2."""
+    options.setdefault("bytecode_cache", _build_bytecode_cache())
     env = Environment(**options)
     env.globals.update(
         {

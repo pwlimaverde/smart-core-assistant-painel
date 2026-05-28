@@ -4,6 +4,31 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.3+002 - 2026-05-28 (build manual, sem tag)
+
+### Performance
+- **`jinja2_env.py` — cache de `static_versioned`**: memoiza via
+  `lru_cache(512)` em produção (DEBUG=False). Cada render do dashboard fazia
+  ~30 chamadas que executavam `finders.find()` + `os.path.getmtime()` em disco
+  por request; agora viram lookup em dict após o primeiro hit. Em DEBUG o
+  comportamento original é mantido para refletir mudanças em dev.
+- **`jinja2_env.py` — cache de `_resolve_tenant_context` por request**: os
+  helpers de permissão (`can_view_module`, `is_owner_user`, etc.) são chamados
+  ~8 vezes no `base_dashboard.html` e cada um disparava
+  `TenantUser.objects.get(...)` idêntico. Resultado agora é armazenado em
+  `request._tenant_ctx_cache`, reduzindo 8 queries SQL → 1 por render.
+- **`jinja2_env.py` — `FileSystemBytecodeCache`**: workers Gunicorn em
+  cold-start carregam `.html` direto do bytecode persistido em
+  `/tmp/jinja2-cache` (configurável via `JINJA2_BYTECODE_CACHE_DIR`),
+  eliminando o re-parse de Python source nos primeiros requests.
+
+### Changed
+- **`docker/compose/workers.yml`**: `init: true` (tini como PID 1, reapa
+  zombies do `celery inspect ping`) e healthcheck mais espaçado
+  (interval 60s→180s, timeout 15s→45s, start_period 60s→120s) para não
+  saturar VM de 2 vCPUs onde o healthcheck sobe um Django+Celery completo a
+  cada execução.
+
 ## 1.2.2+016 - 2026-05-21 (build manual, sem tag)
 
 ### Fixed

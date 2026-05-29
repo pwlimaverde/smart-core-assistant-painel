@@ -109,12 +109,12 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
                 "conteudo_inicial": "",
             }
 
-        return render(request, "treinamento/treinar_ia.html", context)
+        return render(request, "apps/treinamento/treinar_ia.html", context)
 
     if request.method == "POST":
         return _processar_treinamento(request)
 
-    return render(request, "treinamento/treinar_ia.html")
+    return render(request, "apps/treinamento/treinar_ia.html")
 
 
 def _processar_treinamento(request: HttpRequest) -> HttpResponse:
@@ -132,10 +132,10 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
 
     if not tag or not grupo:
         messages.error(request, "Tag e Grupo são obrigatórios.")
-        return render(request, "treinamento/treinar_ia.html")
+        return render(request, "apps/treinamento/treinar_ia.html")
     if not conteudo and not documento:
         messages.error(request, "É necessário fornecer conteúdo ou documento.")
-        return render(request, "treinamento/treinar_ia.html")
+        return render(request, "apps/treinamento/treinar_ia.html")
 
     documento_path = None
     try:
@@ -158,7 +158,7 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                     messages.error(
                         request, "Treinamento não encontrado para edição."
                     )
-                    return render(request, "treinamento/treinar_ia.html")
+                    return render(request, "apps/treinamento/treinar_ia.html")
             else:
                 treinamento = Treinamento.objects.create(tag=tag, grupo=grupo)
                 messages.success(request, "Treinamento criado com sucesso!")
@@ -196,7 +196,7 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     except Exception as e:
         logger.error(f"Erro ao processar treinamento: {e}")
         messages.error(request, "Erro interno do servidor. Tente novamente.")
-        return render(request, "treinamento/treinar_ia.html")
+        return render(request, "apps/treinamento/treinar_ia.html")
     finally:
         TreinamentoService.limpar_arquivo_temporario(documento_path)
 
@@ -322,7 +322,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             texto_melhorado = ""
         return render(
             request,
-            "treinamento/pre_processamento.html",
+            "apps/treinamento/pre_processamento.html",
             {
                 "treinamento": treinamento,
                 "conteudo_unificado": conteudo_unificado,
@@ -427,7 +427,7 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
 
     return render(
         request,
-        "treinamento/verificar_treinamentos.html",
+        "apps/treinamento/verificar_treinamentos.html",
         {
             "treinamentos_vetorizados": treinamentos_vetorizados,
             "treinamentos_com_erro": treinamentos_com_erro,
@@ -503,7 +503,7 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
 
     return render(
         request,
-        "treinamento/verificar_query_compose.html",
+        "apps/treinamento/verificar_query_compose.html",
         {"intents_ok": intents_ok, "intents_erro": intents_erro},
     )
 
@@ -552,7 +552,7 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                 "comportamento_inicial": "",
             }
         return render(
-            request, "treinamento/cadastrar_query_compose.html", context
+            request, "apps/treinamento/cadastrar_query_compose.html", context
         )
 
     if request.method == "POST":
@@ -582,7 +582,7 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
             )
             return render(
                 request,
-                "treinamento/cadastrar_query_compose.html",
+                "apps/treinamento/cadastrar_query_compose.html",
                 {
                     "modo_edicao": bool(query_compose_id),
                     "query_compose_id": query_compose_id,
@@ -636,7 +636,7 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
             )
             return render(
                 request,
-                "treinamento/cadastrar_query_compose.html",
+                "apps/treinamento/cadastrar_query_compose.html",
                 {
                     "modo_edicao": bool(query_compose_id),
                     "query_compose_id": query_compose_id,
@@ -649,7 +649,7 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
             )
 
     # Fallback
-    return render(request, "treinamento/cadastrar_query_compose.html")
+    return render(request, "apps/treinamento/cadastrar_query_compose.html")
 
 
 def testar_query_page(request: HttpRequest) -> HttpResponse:
@@ -663,7 +663,7 @@ def testar_query_page(request: HttpRequest) -> HttpResponse:
         )
         return redirect("dashboard")
 
-    return render(request, "treinamento/testar_query.html")
+    return render(request, "apps/treinamento/testar_query.html")
 
 
 def _build_test_intent_prompt(

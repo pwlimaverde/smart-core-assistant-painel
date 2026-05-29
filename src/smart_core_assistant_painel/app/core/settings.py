@@ -164,6 +164,7 @@ INSTALLED_APPS = [
     # externas. Removido para evitar conflitos durante nova integração.
     # "smart_core_assistant_painel.app.notion_sync",
     "smart_core_assistant_painel.app.settings_manager",
+    "smart_core_assistant_painel.modules.design_system.adapters.django",
 ]
 
 # Flag informativa de habilitação do módulo de sincronização Notion.
@@ -216,12 +217,30 @@ ROOT_URLCONF = "smart_core_assistant_painel.app.core.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
         "DIRS": [
-            os.path.join(BASE_DIR, "core", "templates"),
             os.path.join(
                 BASE_DIR.parent, "modules", "design_system", "templates"
             ),
+        ],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "environment": (
+                "smart_core_assistant_painel"
+                ".modules.design_system.adapters.django.jinja2_env.environment"
+            ),
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "smart_core_assistant_painel.app.core.context_processors.project_version",
+            ],
+        },
+    },
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            os.path.join(BASE_DIR, "core", "templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -605,3 +624,26 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=3, minute=30),
     },
 }
+
+# Configuração de Logging para expor tracebacks de erro 500 no Docker logs
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+

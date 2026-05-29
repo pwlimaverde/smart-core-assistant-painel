@@ -3006,7 +3006,7 @@ wheels = [
 
 [[package]]
 name = "smart-core-assistant-painel"
-version = "1.2.3"
+version = "1.2.3+3"
 source = { editable = "." }
 dependencies = [
     { name = "aiohappyeyeballs" },
@@ -3046,6 +3046,7 @@ dependencies = [
     { name = "httpx-sse" },
     { name = "huggingface-hub" },
     { name = "idna" },
+    { name = "jinja2" },
     { name = "jiter" },
     { name = "jsonpatch" },
     { name = "jsonpointer" },
@@ -3171,6 +3172,7 @@ requires-dist = [
     { name = "httpx-sse", specifier = "==0.4.0" },
     { name = "huggingface-hub", specifier = ">=0.24.0" },
     { name = "idna", specifier = "==3.10" },
+    { name = "jinja2", specifier = ">=3.1.5" },
     { name = "jiter", specifier = "==0.10.0" },
     { name = "jsonpatch", specifier = "==1.33" },
     { name = "jsonpointer", specifier = "==3.0.0" },

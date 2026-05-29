@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace · Smart Core{% endblock %}
+
+{% block extra_head %}
+    {# Estilos específicos (workspace, chat, kanban) agora compilados no core.build.css global #}
+{% endblock %}
+
+{% block layout %}
+<div class="ws-app"
+    {% block workspace_x_data %}{% endblock %}
+    {% block workspace_x_init %}{% endblock %}
+    @keydown.window.alt.1.prevent="setFocus('board')"
+    @keydown.window.alt.2.prevent="setFocus('split')"
+    @keydown.window.alt.3.prevent="setFocus('chat')"
+    @keydown.window.escape="onEscape($event)"
+    @keydown.window.i="if (!isTypingTarget($event)) onToggleInfo($event)"
+    :data-theme="theme || 'light'"
+    :data-ws-density="density || 'normal'">
+    {% block workspace_topbar %}{% endblock %}
+    <main class="ws-main" :data-focus="focusMode || 'split'">
+        {% block workspace_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

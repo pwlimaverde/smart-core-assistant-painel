@@ -1,0 +1,30 @@
+{# Partial usado dentro de <template x-for="c in conversations">. Recebe c. #}
+<button @click="openConversation(c.atendimento_id)"
+    class="w-full text-left px-3 py-3 hover:bg-stone-50 transition-colors flex gap-3 items-start"
+    :class="activeConv && activeConv.atendimento_id === c.atendimento_id ? 'bg-[#a98f71]/5 border-l-2 border-l-[#a98f71]' : ''">
+    <div class="h-10 w-10 shrink-0 rounded-full bg-[#a98f71] flex items-center justify-center text-white font-bold text-xs"
+        x-text="(c.contato_nome || '?').slice(0,2).toUpperCase()"></div>
+    <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-semibold text-stone-800 truncate" x-text="c.contato_nome"></span>
+            <span class="text-[10px] text-stone-400 whitespace-nowrap"
+                x-text="c.data_ultima_mensagem ? new Date(c.data_ultima_mensagem).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''"></span>
+        </div>
+        <div class="text-[11px] text-stone-600 truncate mt-0.5"
+            :class="c.assunto ? '' : 'italic text-stone-400'"
+            x-text="c.assunto || 'Sem assunto'"></div>
+        <div class="flex items-center justify-between gap-2 mt-0.5">
+            <span class="text-xs text-stone-500 truncate"
+                x-text="c.preview_remetente === 'contato' ? c.preview_msg : (c.preview_remetente ? '↳ ' + c.preview_msg : c.preview_msg)"></span>
+            <template x-if="c.nao_lidos > 0">
+                <span class="bg-green-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[1.2rem] text-center"
+                    x-text="c.nao_lidos"></span>
+            </template>
+        </div>
+        <div class="flex items-center gap-1 mt-1">
+            <span class="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                :class="prioridadeClass(c.prioridade)" x-text="c.prioridade"></span>
+            <span class="text-[10px] text-stone-400" x-text="c.etapa_nome"></span>
+        </div>
+    </div>
+</button>

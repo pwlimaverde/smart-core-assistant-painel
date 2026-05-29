@@ -84,7 +84,7 @@ def _parse_state(state_data: dict[str, Any]) -> str:
 class InstanceListView(LoginRequiredMixin, TemplateView):
     """Lista instâncias Evolution do tenant."""
 
-    template_name = "evolution_sync/instance_list.html"
+    template_name = "apps/evolution_sync/instance_list.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)
@@ -330,7 +330,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
 class InstanceDetailView(LoginRequiredMixin, TemplateView):
     """Detalhe de instância com QR Code e configuração de webhook."""
 
-    template_name = "evolution_sync/instance_detail.html"
+    template_name = "apps/evolution_sync/instance_detail.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context: dict[str, Any] = super().get_context_data(**kwargs)

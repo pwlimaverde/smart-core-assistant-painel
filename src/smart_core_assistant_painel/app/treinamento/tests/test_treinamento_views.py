@@ -36,7 +36,7 @@ class TestTreinamentoViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "treinamento/treinar_ia.html")
+        self.assertTemplateUsed(response, "apps/treinamento/treinar_ia.html")
         self.assertFalse(response.context["modo_edicao"])
         self.assertIsNone(response.context["treinamento_id"])
 
@@ -61,7 +61,7 @@ class TestTreinamentoViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "treinamento/treinar_ia.html")
+        self.assertTemplateUsed(response, "apps/treinamento/treinar_ia.html")
         self.assertTrue(response.context["modo_edicao"])
         self.assertEqual(response.context["treinamento_id"], 1)
         self.assertEqual(response.context["tag_inicial"], "test_tag")
@@ -100,7 +100,7 @@ class TestTreinamentoViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "treinamento/treinar_ia.html")
+        self.assertTemplateUsed(response, "apps/treinamento/treinar_ia.html")
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(
             any("Tag e Grupo são obrigatórios" in str(m) for m in messages)
@@ -121,7 +121,7 @@ class TestTreinamentoViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "treinamento/treinar_ia.html")
+        self.assertTemplateUsed(response, "apps/treinamento/treinar_ia.html")
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(
             any(
@@ -231,7 +231,7 @@ class TestTreinamentoViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "treinamento/treinar_ia.html")
+        self.assertTemplateUsed(response, "apps/treinamento/treinar_ia.html")
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(
             any("Erro interno do servidor" in str(m) for m in messages)
@@ -296,7 +296,7 @@ class TestPreProcessamentoViews(TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "treinamento/pre_processamento.html")
+        self.assertTemplateUsed(response, "apps/treinamento/pre_processamento.html")
         self.assertEqual(response.context["treinamento"], self.treinamento)
 
     @patch("smart_core_assistant_painel.app.treinamento.views.has_permission")
@@ -533,7 +533,7 @@ class TestVerificarTreinamentosViews(TestCase):
         # Assert
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
-            response, "treinamento/verificar_treinamentos.html"
+            response, "apps/treinamento/verificar_treinamentos.html"
         )
         self.assertIn(
             self.treinamento_vetorizado,

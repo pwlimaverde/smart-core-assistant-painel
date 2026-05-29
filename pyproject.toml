@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "1.2.3"
+version = "1.2.3+004"
 description = "central de atendimento multicanal onde um chatbot realiza a triagem inicial e transfere para atendimento humano quando necessário, com fluxos totalmente personalizáveis por departamento através de uma interface Kanban"
 readme = "README.md"
 authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]
@@ -39,6 +39,7 @@ dependencies = [
     "httpx-sse==0.4.0",
     "idna==3.10",
     "jiter==0.10.0",
+    "jinja2>=3.1.5",
     "jsonpatch==1.33",
     "jsonpointer==3.0.0",
     "langchain==1.0.2",

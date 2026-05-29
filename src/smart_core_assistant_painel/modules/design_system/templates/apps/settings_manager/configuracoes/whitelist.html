@@ -1,0 +1,193 @@
+{% extends "base_dashboard.html" %}
+
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-8">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-x-4">
+            <span class="p-2 bg-green-50 rounded-lg text-green-600">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </span>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-stone-900">
+                    Whitelist WhatsApp
+                </h1>
+                <p class="text-sm text-stone-500">
+                    Números que não recebem resposta automática do bot
+                </p>
+            </div>
+        </div>
+        <div class="flex gap-x-3">
+            <a href="{{ url('configuracoes:index') }}"
+                class="inline-flex items-center rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Voltar
+            </a>
+            <a href="{{ url('configuracoes:whitelist_adicionar') }}"
+                class="inline-flex items-center rounded-md bg-[#a98f71] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#8c735a]">
+                <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Adicionar Número
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="mx-auto max-w-7xl">
+    <!-- Busca -->
+    <div class="mb-6">
+        <form method="get" class="flex gap-3">
+            <div class="flex-1 relative">
+                <input type="text" name="q" value="{{ search }}" placeholder="Buscar por nome ou telefone..."
+                    class="w-full rounded-lg border border-stone-300 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:border-[#a98f71] focus:outline-none focus:ring-1 focus:ring-[#a98f71]">
+                {% if search %}
+                <a href="{{ url('configuracoes:whitelist') }}"
+                    class="absolute right-10 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+            <button type="submit"
+                class="inline-flex items-center rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar
+            </button>
+        </form>
+    </div>
+
+    <!-- Tabela -->
+    <div class="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+        {% if whitelist %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-stone-200">
+                <thead class="bg-stone-50">
+                    <tr>
+                        <th scope="col"
+                            class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-stone-900 sm:pl-6">
+                            Nome
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900">
+                            Telefone
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900">
+                            Status
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900">
+                            Criado em
+                        </th>
+                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                            <span class="sr-only">Ações</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-200 bg-white">
+                    {% for item in whitelist %}
+                    <tr class="hover:bg-stone-50 transition-colors">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-stone-900 sm:pl-6">
+                            <div>{{ item.name }}</div>
+                            {% if item.contact_id %}
+                            <div class="text-xs font-normal text-stone-500">
+                                Vinculado: {{ item.contact.nome_contato or item.contact.telefone }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 font-mono">
+                            {{ item.phone_number }}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm">
+                            <button onclick="toggleWhitelist({{ item.pk }})" id="toggle-btn-{{ item.pk }}"
+                                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer transition-colors {% if item.active %}bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100{% else %}bg-stone-100 text-stone-500 border border-stone-200 hover:bg-stone-200{% endif %}">
+                                <span
+                                    class="mr-1.5 h-1.5 w-1.5 rounded-full {% if item.active %}bg-emerald-500{% else %}bg-stone-400{% endif %}"></span>
+                                <span id="toggle-text-{{ item.pk }}">{{ item.active|yesno("Ativo,Inativo") }}</span>
+                            </button>
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500">
+                            {{ item.created_at|date("d/m/Y H:i") }}
+                        </td>
+                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <div class="flex justify-end gap-3">
+                                <a href="{{ url('configuracoes:whitelist_editar', args=[item.pk]) }}"
+                                    class="text-amber-600 hover:text-amber-900">Editar</a>
+                                <form method="post" action="{{ url('configuracoes:whitelist_excluir', args=[item.pk]) }}"
+                                    class="inline"
+                                    onsubmit="return confirm('Tem certeza que deseja remover {{ item.name }}?');">
+                                    {{ csrf_input }}
+                                    <button type="submit"
+                                        class="text-stone-400 hover:text-rose-600">Excluir</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <h3 class="mt-4 text-sm font-semibold text-stone-900">Nenhum número cadastrado</h3>
+            <p class="mt-1 text-sm text-stone-500">
+                {% if search %}Nenhum resultado para "{{ search }}".{% else %}Adicione números para ignorar nas respostas automáticas.{% endif %}
+            </p>
+            {% if not search %}
+            <div class="mt-6">
+                <a href="{{ url('configuracoes:whitelist_adicionar') }}"
+                    class="inline-flex items-center rounded-md bg-[#a98f71] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#8c735a]">
+                    <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Adicionar Número
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleWhitelist(pk) {
+    fetch(`/configuracoes/whitelist/${pk}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                || '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const btn = document.getElementById(`toggle-btn-${pk}`);
+            const text = document.getElementById(`toggle-text-${pk}`);
+            const dot = btn.querySelector('span:first-child');
+            if (data.active) {
+                btn.className = btn.className.replace(/bg-stone-100 text-stone-500 border-stone-200 hover:bg-stone-200/g, 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100');
+                dot.className = dot.className.replace('bg-stone-400', 'bg-emerald-500');
+                text.textContent = 'Ativo';
+            } else {
+                btn.className = btn.className.replace(/bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/g, 'bg-stone-100 text-stone-500 border-stone-200 hover:bg-stone-200');
+                dot.className = dot.className.replace('bg-emerald-500', 'bg-stone-400');
+                text.textContent = 'Inativo';
+            }
+        }
+    });
+}
+</script>
+{% endblock content %}

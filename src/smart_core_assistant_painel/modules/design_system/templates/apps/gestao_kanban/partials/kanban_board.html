@@ -1,0 +1,22 @@
+{# Kanban — sempre presente #}
+<section class="ws-board">
+    <header class="ws-board__head">
+        <div>
+            <div class="ws-board__title" x-text="(fluxos.find(f => f.id === fluxoId) || {}).nome || 'Workspace'"></div>
+            <div class="ws-board__sub">
+                <span x-text="(board.etapas || []).reduce((s, e) => s + (e.count || 0), 0)"></span>
+                atendimentos
+            </div>
+        </div>
+    </header>
+
+    <div class="ws-cols">
+        <template x-for="etapa in board.etapas" :key="etapa.id">
+            {% include "apps/gestao_kanban/partials/kanban_column.html" %}
+        </template>
+        <div x-show="board.etapas.length === 0"
+            style="margin: auto; color: var(--ws-fg-subtle); font-size: 13px;">
+            Selecione um fluxo para exibir o kanban.
+        </div>
+    </div>
+</section>

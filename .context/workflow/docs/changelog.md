@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-05-26] - Design System Desacoplado — Migração DTL → Jinja2
+
+### Adicionado
+- **components.css**: Novo arquivo `modules/design_system/static/css/components.css` centralizando classes utilitárias semânticas que consomem os tokens do Design System.
+- **Jinja2 centralizado**: Pasta `modules/design_system/templates/apps/` com todos os 72 templates migrados de 8 aplicativos Django.
+- **Suporte escapejs em Jinja2**: Filtro global `escapejs` adicionado a `jinja2_env.py` para compatibilidade com javascript inline.
+
+### Modificado
+- **Settings do Django (`settings.py`)**: Remoção de `modules/design_system/templates` do backend DTL, mantendo apenas para Jinja2.
+- **Views e URLs**: 15 arquivos de views em Django atualizados em todos os apps para apontarem para as rotas corretas dos templates centralizados no design_system.
+
+### Removido
+- **Templates locais legados**: Pastas de templates locais inteiras deletadas de `atendimento_unificado`, `chat_evolution`, `gestao_kanban`, `tenants`, `evolution_sync`, `settings_manager`, `treinamento` e `usuarios`.
+
+### Workflow
+- Final review — veredito **CONFORME**. Plano `design-system-refactor` arquivado.
+
 ## [2026-05-25] - Segurança e retenção do armazenamento de mídia por tenant
 
 ### Adicionado

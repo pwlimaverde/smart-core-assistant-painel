@@ -1,0 +1,106 @@
+{% extends "base_dashboard.html" %}
+
+
+{% block content %}
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-x-4">
+          <img src="{{ static('img/logo_smart.png') }}" alt="Smart Core Logo" class="h-12 w-auto">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-stone-900">
+              {% if modo_edicao %}Editar Intent{% else %}Cadastrar Intent{% endif %}
+            </h1>
+            <p class="text-sm text-stone-500">
+              Definição de intenções e comportamentos do assistente
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-x-3">
+          <a href="{{ url('treinamento:verificar_query_compose') }}"
+            class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 hover:bg-stone-50">
+            Verificar Intents
+          </a>
+        </div>
+      </div>
+    </div>
+
+  <div class="mx-auto max-w-7xl">
+    <div class="mx-auto max-w-3xl">
+      {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div
+          class="rounded-md p-4 {% if message.tags == 'success' %}bg-emerald-50 text-emerald-700{% elif message.tags == 'error' %}bg-rose-50 text-rose-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+        <form method="post" class="p-8 space-y-6">
+          {{ csrf_input }}
+          {% if modo_edicao %}
+          <input type="hidden" name="query_compose_id" value="{{ query_compose_id }}" />
+          {% endif %}
+
+          <div class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+            <div>
+              <label for="tag" class="block text-sm font-medium leading-6 text-stone-900">Tag</label>
+              <div class="mt-2">
+                <input type="text" id="tag" name="tag" value="{{ tag_inicial }}" required
+                  class="block w-full rounded-md border-0 py-1.5 px-3 text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                  placeholder="Ex: saudacao.inicio">
+              </div>
+            </div>
+
+            <div>
+              <label for="grupo" class="block text-sm font-medium leading-6 text-stone-900">Grupo</label>
+              <div class="mt-2">
+                <input type="text" id="grupo" name="grupo" value="{{ grupo_inicial }}" required
+                  class="block w-full rounded-md border-0 py-1.5 px-3 text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                  placeholder="Ex: saudacoes">
+              </div>
+            </div>
+
+            <div class="col-span-full">
+              <label for="descricao" class="block text-sm font-medium leading-6 text-stone-900">Descrição</label>
+              <div class="mt-2">
+                <textarea id="descricao" name="descricao" rows="3" required
+                  class="block w-full rounded-md border-0 py-1.5 px-3 text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                  placeholder="Descrição do comportamento para gerar embedding">{{ descricao_inicial }}</textarea>
+              </div>
+            </div>
+
+            <div class="col-span-full">
+              <label for="exemplo" class="block text-sm font-medium leading-6 text-stone-900">Exemplo</label>
+              <div class="mt-2">
+                <textarea id="exemplo" name="exemplo" rows="3" required
+                  class="block w-full rounded-md border-0 py-1.5 px-3 text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                  placeholder="Exemplo de query que representa o intent">{{ exemplo_inicial }}</textarea>
+              </div>
+            </div>
+
+            <div class="col-span-full">
+              <label for="comportamento"
+                class="block text-sm font-medium leading-6 text-stone-900">Comportamento</label>
+              <div class="mt-2">
+                <textarea id="comportamento" name="comportamento" rows="6" required
+                  class="block w-full rounded-md border-0 py-1.5 px-3 text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:ring-2 focus:ring-inset focus:ring-amber-600 sm:text-sm sm:leading-6"
+                  placeholder="Respostas/ações do assistente">{{ comportamento_inicial }}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 flex justify-end">
+            <button type="submit"
+              class="rounded-md bg-stone-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800 transition-all">
+              {% if modo_edicao %}Salvar Alterações{% else %}Cadastrar Intent{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}

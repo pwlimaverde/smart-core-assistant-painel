@@ -5,7 +5,7 @@
     </label>
   {% endif %}
   <input 
-    type="{{ type|default:'text' }}"
+    type="{{ type|default('text') }}"
     {% if id %}id="{{ id }}"{% endif %}
     {% if name %}name="{{ name }}"{% endif %}
     {% if value %}value="{{ value }}"{% endif %}

@@ -25,7 +25,7 @@ def cadastro(request: HttpRequest) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     if request.method == "GET":
-        return render(request, "cadastro.html")
+        return render(request, "apps/usuarios/cadastro.html")
     elif request.method == "POST":
         username = request.POST.get("username")
         senha = request.POST.get("senha")
@@ -69,7 +69,7 @@ def login(request: HttpRequest) -> HttpResponse:
     associado ao atendente humano vinculado ao usuário (usuario_sistema).
     """
     if request.method == "GET":
-        return render(request, "login.html")
+        return render(request, "apps/usuarios/login.html")
     elif request.method == "POST":
         username = request.POST.get("username")
         senha = request.POST.get("senha")

@@ -1,16 +1,13 @@
 {
-  "active": [],
-  "completed": [
+  "active": [
     {
-      "slug": "seguranca-midia-tenant-retencao",
-      "path": "plans/archive/seguranca-midia-tenant-retencao.md",
-      "title": "Segurança e retenção do armazenamento de mídia por tenant",
-      "summary": "Isolar a mídia por tenant no path, servir arquivos por view autenticada com X-Accel-Redirect e apagar o binário após 30 dias.",
-      "linkedAt": "2026-05-25T15:24:24.948Z",
-      "completedAt": "2026-05-25T00:00:00.000Z",
-      "status": "completed",
-      "finalReview": "CORRIGIDO"
+      "slug": "fixjinja2filters",
+      "path": "plans/fixjinja2filters.md",
+      "title": "Correção de Filtros DTL Incompatíveis no Jinja2",
+      "linkedAt": "2026-05-26T19:56:18.020Z",
+      "status": "active"
     }
   ],
-  "primary": null
+  "completed": [],
+  "primary": "fixjinja2filters"
 }

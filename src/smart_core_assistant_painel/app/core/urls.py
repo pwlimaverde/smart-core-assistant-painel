@@ -41,7 +41,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("tenant-admin/", tenant_admin_site.urls),
     path(
-        "tenants/",
+        "apps/tenants/",
         include("smart_core_assistant_painel.app.tenants.urls"),
     ),
     path(
@@ -55,7 +55,7 @@ urlpatterns = [
         name="clickup_callback",
     ),
     path(
-        "usuarios/",
+        "apps/usuarios/",
         include("smart_core_assistant_painel.app.usuarios.urls"),
     ),
     path(
@@ -67,7 +67,7 @@ urlpatterns = [
         include("smart_core_assistant_painel.app.clientes.urls"),
     ),
     path(
-        "treinamento/",
+        "apps/treinamento/",
         include("smart_core_assistant_painel.app.treinamento.urls"),
     ),
     # Workspace de Atendimento Unificado (Chat + Kanban)

@@ -8,7 +8,7 @@ from ...models import Tenant
 
 
 class RegisterPaymentView(UserPassesTestMixin, FormView):
-    template_name = "tenants/backoffice/register_payment.html"
+    template_name = "apps/tenants/backoffice/register_payment.html"
     form_class = RegisterPaymentForm
 
     def test_func(self):

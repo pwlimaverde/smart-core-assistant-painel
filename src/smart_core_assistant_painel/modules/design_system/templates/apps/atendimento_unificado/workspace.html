@@ -1,10 +1,10 @@
 {% extends "apps/atendimento_unificado/base_workspace.html" %}
 
 {% block workspace_x_data %}x-data="workspaceStore({
-    fluxoId: {{ fluxo_id|default('null') }},
+    fluxoId: {{ fluxo_id|default('null', true) }},
     tenantSlug: '{{ tenant_slug|escapejs }}',
-    atendenteId: {{ atendente_id|default('null') }},
-    atendenteNome: '{{ atendente_nome|escapejs }}',
+    atendenteId: {{ atendente_id|default('null', true) }},
+    atendenteNome: '{{ (atendente_nome or '')|escapejs }}',
     sseEnabled: {{ 'true' if sse_enabled else 'false' }},
     endpoints: {
         fluxos: '{{ url('atendimento_unificado:gestao_kanban_api:fluxos_list') }}',

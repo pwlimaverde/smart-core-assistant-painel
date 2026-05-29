@@ -4,6 +4,16 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.3+004 - 2026-05-29 (build manual, sem tag)
+
+### Fixed
+- **`workspace.html` — filtro `default` no Jinja2**: `fluxo_id` e `atendente_id`
+  quando `None` (Python) eram renderizados como a string literal `None` no JS,
+  quebrando a inicialização do `workspaceStore` Alpine.js. Corrigido com
+  `|default('null', true)` (o segundo argumento `true` ativa o fallback para
+  valores falsy, não só `Undefined`). `atendente_nome` também reforçado com
+  `(atendente_nome or '')` para garantir string vazia em vez de `None`.
+
 ## 1.2.3+003 - 2026-05-28 (build manual, sem tag)
 
 ### Fixed

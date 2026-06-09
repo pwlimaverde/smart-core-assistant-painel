@@ -307,3 +307,31 @@ docker compose -f docker/compose/infra.yml --profile debug up -d flower
 ```
 
 Acesse: `http://servidor:5555` (usuário/senha no `.env`)
+
+---
+
+## Proxy Reverso e SSL Automático (Caddy)
+
+A partir da versão `1.2.4`, o projeto utiliza o **Caddy** rodando em container Docker como proxy reverso e gerenciador de certificados SSL automático. Ele substitui a pilha antiga de Nginx + Certbot.
+
+### Requisito Crítico
+Para que o Caddy no Docker consiga se vincular às portas 80 e 443, **qualquer serviço de Caddy ou Nginx rodando diretamente no host VPS deve ser desativado**:
+```bash
+sudo systemctl stop caddy
+sudo systemctl disable caddy
+```
+
+### Inicialização do Proxy (Caddy)
+Para subir o proxy e iniciar a emissão automática do certificado SSL:
+```bash
+# Sobe o proxy Caddy em background
+docker compose -f docker/compose/proxy.yml up -d
+```
+
+O Caddy obterá os certificados SSL automaticamente via Let's Encrypt para os domínios configurados no `docker/caddy/Caddyfile`. Os certificados são persistidos no volume Docker `smartcore_caddy_data`.
+
+### Comandos Úteis do Caddy (via Taskipy)
+- **Validar configurações:** `uv run task server-caddy-test`
+- **Recarregar configurações sem downtime:** `uv run task server-caddy-reload`
+- **Verificar logs de SSL/Conexão:** `uv run task server-logs-caddy`
+

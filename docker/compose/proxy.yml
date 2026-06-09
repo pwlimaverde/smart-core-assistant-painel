@@ -1,52 +1,38 @@
 services:
   # ============================================
-  # Nginx (Reverse Proxy + SSL Termination)
+  # Caddy (Reverse Proxy + SSL Automático)
   # ============================================
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: smartcoreassistant_nginx
+  caddy:
+    image: caddy:2-alpine
+    container_name: smartcoreassistant_caddy
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp" # Habilita suporte HTTP/3
     volumes:
-      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ../nginx/conf.d:/etc/nginx/conf.d:ro
-      - ../nginx/snippets:/etc/nginx/snippets:ro
-      - ssl_certs:/etc/letsencrypt:ro
-      - certbot_www:/var/www/certbot:ro
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
       - static_files:/var/www/static:ro
-      - media_files:/var/www/media:ro
+      # Montado em protected-media para servir URLs reescritas de X-Accel-Redirect
+      - media_files:/var/www/protected-media:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
     networks:
       - shared_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # ============================================
-  # Certbot (Gerenciamento de Certificados SSL)
-  # Uso: docker compose -p smart-core-proxy --profile ssl run --rm certbot renew
-  # ============================================
-  certbot:
-    image: certbot/dns-cloudflare
-    container_name: smartcoreassistant_certbot
-    profiles:
-      - ssl
-    volumes:
-      - ssl_certs:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-      - ../certbot/cloudflare.ini:/etc/cloudflare/cloudflare.ini:ro
-    networks:
-      - shared_network
-
 volumes:
-  ssl_certs:
-    name: smartcore_ssl_certs
-  certbot_www:
-    name: smartcore_certbot_www
+  caddy_data:
+    name: smartcore_caddy_data
+  caddy_config:
+    name: smartcore_caddy_config
   static_files:
     name: smartcore_static_files
     external: true

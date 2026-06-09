@@ -1,0 +1,96 @@
+# Smart Core Assistant - Caddyfile no Docker
+
+{
+    # Email global para recuperação de SSL do Let's Encrypt
+    email pwlimaverde@gmail.com
+}
+
+# ============================================
+# Painel Django (dominio principal)
+# ============================================
+smartcoreassistant.com.br {
+    # Servir estáticos diretamente pelo Caddy
+    handle_path /static/* {
+        root * /var/www/static
+        file_server
+        header Cache-Control "public, max-age=2592000, immutable"
+    }
+
+    # Favicon
+    handle /favicon.ico {
+        root * /var/www/static/img
+        rewrite * /logo_smart.png
+        file_server
+    }
+
+    # Proxy reverso para Django
+    handle {
+        reverse_proxy smartcoreassistant_app:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up Host {host}
+            
+            # Interceptação de X-Accel-Redirect para mídias protegidas
+            @accel header X-Accel-Redirect *
+            handle_response @accel {
+                root * /var/www
+                rewrite * {resp.header.X-Accel-Redirect}
+                header -X-Accel-Redirect
+                file_server
+            }
+        }
+    }
+
+    header {
+        Strict-Transport-Security max-age=31536000; includeSubDomains
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+    }
+
+    log {
+        output stdout
+    }
+}
+
+# ============================================
+# Evolution API (produção) via gRPC h2c no Host
+# ============================================
+api.smartcoreassistant.com.br {
+    reverse_proxy h2c://host.docker.internal:8080 {
+        flush_interval -1
+        transport http {
+            versions h2c
+        }
+    }
+    header {
+        Strict-Transport-Security max-age=31536000; includeSubDomains
+        X-Content-Type-Options nosniff
+    }
+    log {
+        output stdout
+    }
+}
+
+# ============================================
+# Evolution API (desenvolvimento) no Host
+# ============================================
+dev-api.smartcoreassistant.com.br {
+    reverse_proxy h2c://host.docker.internal:8090 {
+        flush_interval -1
+        transport http {
+            versions h2c
+        }
+    }
+    log {
+        output stdout
+    }
+}
+
+# ============================================
+# Grafana no Host
+# ============================================
+grafana.smartcoreassistant.com.br {
+    reverse_proxy host.docker.internal:3000
+    log {
+        output stdout
+    }
+}
